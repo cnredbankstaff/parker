@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pro Sports Arena</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&amp;family=Audiowide&amp;family=Poppins:wght@600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    body { box-sizing: border-box; }
+    html, body, #app { height: 100%; }
+    
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+    .audiowide { font-family: 'Audiowide', sans-serif; }
+    .poppins { font-family: 'Poppins', sans-serif; }
+    
+    @keyframes stadium-lights {
+      0%, 100% { box-shadow: inset 0 0 60px rgba(255, 255, 255, 0.1); }
+      50% { box-shadow: inset 0 0 100px rgba(255, 255, 255, 0.3); }
+    }
+    
+    @keyframes crowd-roar {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    @keyframes player-enter {
+      0% { opacity: 0; transform: translateY(50px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes ball-approach {
+      0% { opacity: 0; transform: scale(2) translateZ(-500px); }
+      100% { opacity: 1; transform: scale(1) translateZ(0); }
+    }
+    
+    @keyframes shoot-action {
+      0% { transform: rotateX(0deg) rotateZ(0deg); }
+      50% { transform: rotateX(-20deg) rotateZ(-15deg); }
+      100% { transform: rotateX(0deg) rotateZ(0deg); }
+    }
+    
+    @keyframes score-flash {
+      0% { transform: scale(0.5); opacity: 0; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .stadium-effect {
+      animation: stadium-lights 3s ease-in-out infinite;
+    }
+    
+    .crowd-energy {
+      animation: crowd-roar 2s ease-in-out infinite;
+    }
+    
+    .player-card {
+      animation: player-enter 0.6s ease-out;
+      transition: transform 0.3s ease;
+    }
+    
+    .player-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .first-person-hud {
+      perspective: 1000px;
+    }
+    
+    .action-button {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .action-button:active {
+      transform: scale(0.95);
+    }
+    
+    .action-button:hover {
+      transform: scale(1.05);
+    }
+    
+    .field-background {
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+    
+    .player-stat {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .match-ui {
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 100%);
+      backdrop-filter: blur(5px);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="m-0 overflow-hidden bg-black text-white">
+  <div id="app" class="w-full h-full flex flex-col"><!-- SCREEN 1: Sport Selection -->
+   <div id="sport-select" class="h-full w-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-black">
+    <div class="mb-8 text-center">
+     <h1 id="game-title" class="orbitron text-7xl font-black mb-2 bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">PRO SPORTS ARENA</h1>
+     <p class="audiowide text-2xl text-blue-400 tracking-widest">CHOOSE YOUR LEAGUE</p>
+     <p class="text-slate-400 mt-2">Experience the action from a player's perspective</p>
+    </div>
+    <div class="grid grid-cols-2 gap-6 max-w-2xl"><!-- FIFA -->
+     <div class="player-card bg-gradient-to-br from-green-600 to-green-900 rounded-3xl p-8 cursor-pointer border-3 border-green-400 hover:border-green-300" onclick="selectSport('fifa')">
+      <div class="text-7xl mb-4 text-center">
+       ⚽
+      </div>
+      <h3 class="poppins text-3xl font-bold text-white text-center mb-1">FIFA</h3>
+      <p class="text-green-200 text-center text-sm">Pro Soccer League</p>
+     </div><!-- NBA -->
+     <div class="player-card bg-gradient-to-br from-orange-600 to-orange-900 rounded-3xl p-8 cursor-pointer border-3 border-orange-400 hover:border-orange-300" onclick="selectSport('nba')">
+      <div class="text-7xl mb-4 text-center">
+       ����
+      </div>
+      <h3 class="poppins text-3xl font-bold text-white text-center mb-1">NBA</h3>
+      <p class="text-orange-200 text-center text-sm">Pro Basketball</p>
+     </div><!-- NHL -->
+     <div class="player-card bg-gradient-to-br from-cyan-600 to-cyan-900 rounded-3xl p-8 cursor-pointer border-3 border-cyan-400 hover:border-cyan-300" onclick="selectSport('nhl')">
+      <div class="text-7xl mb-4 text-center">
+       🏒
+      </div>
+      <h3 class="poppins text-3xl font-bold text-white text-center mb-1">NHL</h3>
+      <p class="text-cyan-200 text-center text-sm">Pro Ice Hockey</p>
+     </div><!-- MLB -->
+     <div class="player-card bg-gradient-to-br from-red-600 to-red-900 rounded-3xl p-8 cursor-pointer border-3 border-red-400 hover:border-red-300" onclick="selectSport('mlb')">
+      <div class="text-7xl mb-4 text-center">
+       ⚾
+      </div>
+      <h3 class="poppins text-3xl font-bold text-white text-center mb-1">MLB</h3>
+      <p class="text-red-200 text-center text-sm">Pro Baseball</p>
+     </div><!-- NFL -->
+     <div class="player-card bg-gradient-to-br from-amber-700 to-amber-900 rounded-3xl p-8 cursor-pointer border-3 border-amber-400 hover:border-amber-300" onclick="selectSport('nfl')">
+      <div class="text-7xl mb-4 text-center">
+       🏈
+      </div>
+      <h3 class="poppins text-3xl font-bold text-white text-center mb-1">NFL</h3>
+      <p class="text-amber-200 text-center text-sm">Pro Football</p>
+     </div>
+    </div>
+   </div><!-- SCREEN 2: Team Selection -->
+   <div id="team-select" class="h-full w-full hidden flex-col p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-black overflow-auto"><button onclick="goToSportSelect()" class="self-start text-blue-400 hover:text-blue-300 poppins text-sm mb-4 flex items-center gap-2 font-bold"> ◀ BACK TO LEAGUES </button>
+    <div class="text-center mb-8">
+     <h2 id="select-title" class="orbitron text-5xl font-black text-blue-400 mb-2">SELECT YOUR TEAM</h2>
+     <p class="poppins text-slate-400">Choose your franchise</p>
+    </div>
+    <div id="teams-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto"></div>
+   </div><!-- SCREEN 3: Player Selection -->
+   <div id="player-select" class="h-full w-full hidden flex-col p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-black overflow-auto"><button onclick="goToTeamSelect()" class="self-start text-blue-400 hover:text-blue-300 poppins text-sm mb-4 flex items-center gap-2 font-bold"> ◀ BACK TO TEAMS </button>
+    <div class="text-center mb-8">
+     <h2 class="orbitron text-5xl font-black text-blue-400 mb-2">SELECT YOUR PLAYER</h2>
+     <p class="poppins text-slate-400">Choose your starting lineup</p>
+    </div>
+    <div id="players-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto"></div>
+   </div><!-- SCREEN 4: Game Screen -->
+   <div id="game-screen" class="h-full w-full hidden flex-col bg-black overflow-hidden first-person-hud"><!-- Stadium/Field Background -->
+    <div id="field-container" class="flex-1 relative field-background stadium-effect"><!-- FIFA Field -->
+     <div id="fifa-field" class="hidden h-full w-full relative" style="background: linear-gradient(135deg, #2d5a3d 0%, #1a472a 50%, #2d5a3d 100%);">
+      <div class="absolute inset-0 flex items-center justify-center">
+       <div class="text-center">
+        <div class="mb-8 text-8xl animate-bounce">
+         ⚽
+        </div>
+        <p class="text-2xl text-white/50 mb-4">Ball approaching...</p>
+       </div>
+      </div><!-- Opposing players -->
+      <div class="absolute top-20 left-1/4 text-5xl opacity-70">
+       👥
+      </div>
+      <div class="absolute top-20 right-1/4 text-5xl opacity-70">
+       👥
+      </div>
+     </div><!-- NBA Court -->
+     <div id="nba-field" class="hidden h-full w-full relative" style="background: linear-gradient(135deg, #d2691e 0%, #8b4513 50%, #d2691e 100%);">
+      <div class="absolute inset-0">
+       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+        <div class="w-80 h-48 border-4 border-white rounded-full opacity-30"></div>
+        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-40 border-4 border-white rounded-b-full border-t-0 opacity-30"></div>
+       </div>
+      </div>
+      <div class="absolute inset-0 flex items-center justify-center">
+       <div class="text-center">
+        <div class="mb-8 text-8xl animate-bounce">
+         🏀
+        </div>
+        <p class="text-2xl text-white/50">Defend the basket!</p>
+       </div>
+      </div><!-- Opposing players -->
+      <div class="absolute top-32 left-1/3 text-6xl opacity-60">
+       🏃
+      </div>
+      <div class="absolute top-32 right-1/3 text-6xl opacity-60">
+       🏃
+      </div>
+     </div><!-- NHL Rink -->
+     <div id="nhl-field" class="hidden h-full w-full relative" style="background: linear-gradient(135deg, #e8f4f8 0%, #c0e8f0 100%);">
+      <div class="absolute inset-0">
+       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-56 border-4 border-red-500 rounded-full opacity-20"></div>
+       <div class="absolute top-1/4 left-0 w-48 h-40 border-4 border-red-500 border-r-0 opacity-20"></div>
+       <div class="absolute top-1/4 right-0 w-48 h-40 border-4 border-red-500 border-l-0 opacity-20"></div>
+      </div>
+      <div class="absolute inset-0 flex items-center justify-center">
+       <div class="text-center">
+        <div class="mb-8 text-8xl animate-bounce">
+         🏒
+        </div>
+        <p class="text-2xl text-gray-700/50">Check incoming!</p>
+       </div>
+      </div><!-- Opposing players -->
+      <div class="absolute top-32 left-1/4 text-6xl opacity-50">
+       🏃
+      </div>
+      <div class="absolute top-32 right-1/4 text-6xl opacity-50">
+       🏃
+      </div>
+     </div><!-- MLB Field -->
+     <div id="mlb-field" class="hidden h-full w-full relative" style="background: linear-gradient(135deg, #8b7355 0%, #654321 50%, #8b7355 100%);">
+      <div class="absolute inset-0" style="background: linear-gradient(to bottom, #87ceeb 0%, #87ceeb 30%, transparent 30%);"></div>
+      <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-48 h-48">
+       <div class="relative w-full h-full">
+        <div class="absolute inset-0" style="clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background: #f0e68c;"></div>
+       </div>
+      </div>
+      <div class="absolute inset-0 flex items-center justify-center">
+       <div class="text-center">
+        <div class="mb-8 text-8xl animate-bounce">
+         ⚾
+        </div>
+        <p class="text-2xl text-white/50">Ball incoming!</p>
+       </div>
+      </div><!-- Opposing players -->
+      <div class="absolute top-40 left-1/3 text-6xl opacity-60">
+       🏃
+      </div>
+      <div class="absolute top-40 right-1/3 text-6xl opacity-60">
+       🏃
+      </div>
+     </div><!-- NFL Field -->
+     <div id="nfl-field" class="hidden h-full w-full relative" style="background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%);">
+      <div class="absolute inset-0">
+       <div class="absolute top-0 left-0 right-0 text-white/20 text-xs font-mono overflow-hidden h-full">
+        <div class="flex h-full">
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           10
+          </div>
+         </div>
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           20
+          </div>
+         </div>
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           30
+          </div>
+         </div>
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           40
+          </div>
+         </div>
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           50
+          </div>
+         </div>
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           40
+          </div>
+         </div>
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           30
+          </div>
+         </div>
+         <div class="flex-1 border-r border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           20
+          </div>
+         </div>
+         <div class="flex-1 border-white/10 flex flex-col">
+          <div class="text-center pt-2">
+           10
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="absolute inset-0 flex items-center justify-center">
+       <div class="text-center">
+        <div class="mb-8 text-8xl animate-bounce">
+         🏈
+        </div>
+        <p class="text-2xl text-white/50">Offense ready!</p>
+       </div>
+      </div><!-- Opposing players -->
+      <div class="absolute top-32 left-1/4 text-6xl opacity-60">
+       🏃
+      </div>
+      <div class="absolute top-32 right-1/4 text-6xl opacity-60">
+       🏃
+      </div>
+     </div><!-- Match HUD -->
+     <div class="absolute top-0 left-0 right-0 p-6 match-ui">
+      <div class="flex justify-between items-center max-w-6xl mx-auto">
+       <div class="player-stat rounded-lg p-4">
+        <p class="text-xs text-slate-400 poppins mb-1">YOUR TEAM</p>
+        <p id="your-team" class="orbitron text-2xl font-black"></p>
+       </div>
+       <div class="text-center player-stat rounded-lg px-8 py-4">
+        <p class="orbitron text-4xl font-black" id="match-score">0 - 0</p>
+        <p class="text-xs text-slate-400 poppins mt-1" id="match-time">1st Quarter</p>
+       </div>
+       <div class="player-stat rounded-lg p-4">
+        <p class="text-xs text-slate-400 poppins mb-1">OPPONENT</p>
+        <p id="opponent-team" class="orbitron text-2xl font-black"></p>
+       </div>
+      </div>
+     </div><!-- Player Stats Bar (Bottom Left) -->
+     <div class="absolute bottom-6 left-6 player-stat rounded-lg p-4 max-w-xs">
+      <p class="poppins font-bold text-lg mb-2" id="player-name"></p>
+      <div class="space-y-1 text-sm">
+       <div class="flex justify-between"><span class="text-slate-400">Stamina:</span> <span id="stamina" class="text-green-400">100%</span>
+       </div>
+       <div class="w-full bg-slate-700 rounded h-2">
+        <div id="stamina-bar" class="bg-green-500 h-2 rounded" style="width: 100%;"></div>
+       </div>
+       <div class="flex justify-between mt-2"><span class="text-slate-400">Form:</span> <span id="form" class="text-yellow-400">Excellent</span>
+       </div>
+      </div>
+     </div><!-- Action Buttons (Bottom Right) -->
+     <div class="absolute bottom-6 right-6 flex gap-3"><button class="action-button player-stat px-6 py-3 rounded-lg font-bold poppins hover:bg-blue-600/40 transition-all" onclick="attemptAction('pass')"> PASS </button> <button class="action-button player-stat px-6 py-3 rounded-lg font-bold poppins hover:bg-green-600/40 transition-all" onclick="attemptAction('shoot')"> SHOOT/KICK </button> <button class="action-button player-stat px-6 py-3 rounded-lg font-bold poppins hover:bg-red-600/40 transition-all" onclick="attemptAction('defend')"> DEFEND </button>
+     </div><!-- Action Feedback -->
+     <div id="action-feedback" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden">
+      <div class="orbitron text-6xl font-black text-yellow-300" style="text-shadow: 0 0 30px rgba(253, 224, 71, 0.8); animation: score-flash 0.8s ease-out;">
+       GOAL!
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const gameState = {
+      sport: null,
+      team: null,
+      player: null,
+      yourScore: 0,
+      opponentScore: 0,
+      stamina: 100,
+      form: 'Excellent',
+      actions: 0
+    };
+
+    const teamsData = {
+      fifa: [
+        { name: 'Manchester United', emoji: '🔴', color: 'from-red-700' },
+        { name: 'Liverpool FC', emoji: '🔴', color: 'from-red-600' },
+        { name: 'Barcelona', emoji: '🔵', color: 'from-blue-600' },
+        { name: 'Real Madrid', emoji: '⚪', color: 'from-slate-100' },
+        { name: 'PSG', emoji: '🔵', color: 'from-blue-700' },
+        { name: 'Bayern Munich', emoji: '🔴', color: 'from-red-700' },
+        { name: 'Chelsea', emoji: '🔵', color: 'from-blue-600' },
+        { name: 'Arsenal', emoji: '🔴', color: 'from-red-600' }
+      ],
+      nba: [
+        { name: 'Lakers', emoji: '🟣', color: 'from-purple-700' },
+        { name: 'Celtics', emoji: '🟢', color: 'from-green-700' },
+        { name: 'Warriors', emoji: '🟡', color: 'from-blue-400' },
+        { name: 'Heat', emoji: '🔴', color: 'from-red-600' },
+        { name: 'Knicks', emoji: '🔵', color: 'from-blue-600' },
+        { name: 'Mavericks', emoji: '🔵', color: 'from-cyan-400' },
+        { name: 'Bucks', emoji: '🟢', color: 'from-green-700' },
+        { name: 'Nets', emoji: '⚫', color: 'from-slate-800' }
+      ],
+      nhl: [
+        { name: 'Maple Leafs', emoji: '���', color: 'from-blue-700' },
+        { name: 'Avalanche', emoji: '❄️', color: 'from-cyan-600' },
+        { name: 'Penguins', emoji: '🐧', color: 'from-slate-800' },
+        { name: 'Bruins', emoji: '🟤', color: 'from-yellow-700' },
+        { name: 'Oilers', emoji: '🟠', color: 'from-orange-600' },
+        { name: 'Rangers', emoji: '🔵', color: 'from-blue-600' },
+        { name: 'Red Wings', emoji: '🔴', color: 'from-red-700' },
+        { name: 'Canadiens', emoji: '🔴', color: 'from-red-700' }
+      ],
+      mlb: [
+        { name: 'Yankees', emoji: '🟦', color: 'from-slate-800' },
+        { name: 'Red Sox', emoji: '🔴', color: 'from-red-700' },
+        { name: 'Dodgers', emoji: '🔵', color: 'from-blue-600' },
+        { name: 'Giants', emoji: '🟠', color: 'from-orange-600' },
+        { name: 'Cubs', emoji: '🔵', color: 'from-blue-500' },
+        { name: 'Mets', emoji: '🔵', color: 'from-blue-700' },
+        { name: 'White Sox', emoji: '⚫', color: 'from-slate-900' },
+        { name: 'Indians', emoji: '🔴', color: 'from-red-700' }
+      ],
+      nfl: [
+        { name: 'Cowboys', emoji: '⭐', color: 'from-blue-900' },
+        { name: 'Patriots', emoji: '🇺🇸', color: 'from-slate-900' },
+        { name: 'Chiefs', emoji: '👑', color: 'from-red-700' },
+        { name: 'Packers', emoji: '🟢', color: 'from-green-700' },
+        { name: 'Steelers', emoji: '⚫', color: 'from-slate-900' },
+        { name: 'Broncos', emoji: '🟠', color: 'from-orange-700' },
+        { name: 'Eagles', emoji: '🦅', color: 'from-green-800' },
+        { name: 'Dolphins', emoji: '🐬', color: 'from-cyan-600' }
+      ]
+    };
+
+    const playersData = {
+      common: [
+        { name: 'Cristiano Ronaldo / Patrick Mahomes', number: 7, rating: 95 },
+        { name: 'Lionel Messi / LeBron James', number: 10, rating: 94 },
+        { name: 'Kylian Mbappé / Giannis Antetokounmpo', number: 9, rating: 93 },
+        { name: 'Neymar Jr / Luka Doncic', number: 11, rating: 92 },
+        { name: 'Robert Lewandowski / Stephen Curry', number: 9, rating: 92 },
+        { name: 'Mohamed Salah / Damian Lillard', number: 11, rating: 91 }
+      ]
+    };
+
+    const defaultConfig = { game_title: 'PRO SPORTS ARENA' };
+    let config = { ...defaultConfig };
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = { ...defaultConfig, ...newConfig };
+          document.getElementById('game-title').textContent = config.game_title;
+        },
+        mapToCapabilities: () => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
+        mapToEditPanelValues: (config) => new Map([['game_title', config.game_title]])
+      });
+    }
+
+    // Navigation
+    function goToSportSelect() {
+      document.getElementById('sport-select').classList.remove('hidden');
+      document.getElementById('team-select').classList.add('hidden');
+      document.getElementById('player-select').classList.add('hidden');
+      document.getElementById('game-screen').classList.add('hidden');
+    }
+
+    function selectSport(sport) {
+      gameState.sport = sport;
+      document.getElementById('sport-select').classList.add('hidden');
+      document.getElementById('team-select').classList.remove('hidden');
+      
+      const sportNames = { fifa: 'SOCCER', nba: 'BASKETBALL', nhl: 'HOCKEY', mlb: 'BASEBALL', nfl: 'FOOTBALL' };
+      document.getElementById('select-title').textContent = `SELECT YOUR ${sportNames[sport]} TEAM`;
+      
+      renderTeams();
+    }
+
+    function goToTeamSelect() {
+      document.getElementById('team-select').classList.remove('hidden');
+      document.getElementById('player-select').classList.add('hidden');
+    }
+
+    function renderTeams() {
+      const teams = teamsData[gameState.sport];
+      const grid = document.getElementById('teams-grid');
+      grid.innerHTML = teams.map((team, idx) => `
+        <div class="player-card bg-gradient-to-br ${team.color} to-black rounded-2xl p-6 cursor-pointer border-2 border-white/30 hover:border-white/70" onclick="selectTeam('${team.name}', ${idx})">
+          <div class="text-5xl mb-3 text-center">${team.emoji}</div>
+          <h3 class="poppins font-bold text-white text-center">${team.name}</h3>
+        </div>
+      `).join('');
+    }
+
+    function selectTeam(teamName, idx) {
+      gameState.team = teamName;
+      document.getElementById('team-select').classList.add('hidden');
+      document.getElementById('player-select').classList.remove('hidden');
+      renderPlayers();
+    }
+
+    function renderPlayers() {
+      const players = playersData.common;
+      const grid = document.getElementById('players-grid');
+      grid.innerHTML = players.map((player, idx) => `
+        <div class="player-card bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border-2 border-blue-500/50 hover:border-blue-400" onclick="selectPlayer('${player.name}', ${player.number}, ${player.rating})">
+          <div class="flex justify-between items-start mb-4">
+            <div class="text-5xl">⭐</div>
+            <span class="poppins font-bold text-yellow-400 text-2xl">${player.rating}</span>
+          </div>
+          <h3 class="poppins font-bold text-lg text-white mb-2">${player.name}</h3>
+          <div class="flex justify-between poppins text-sm text-slate-400">
+            <span>Jersey #${player.number}</span>
+            <span>${gameState.team}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectPlayer(playerName, number, rating) {
+      gameState.player = { name: playerName, number, rating };
+      document.getElementById('player-select').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      startMatch();
+    }
+
+    function startMatch() {
+      gameState.yourScore = 0;
+      gameState.opponentScore = 0;
+      gameState.stamina = 100;
+      gameState.actions = 0;
+
+      // Show correct field
+      document.getElementById('fifa-field').classList.add('hidden');
+      document.getElementById('nba-field').classList.add('hidden');
+      document.getElementById('nhl-field').classList.add('hidden');
+      document.getElementById('mlb-field').classList.add('hidden');
+      document.getElementById('nfl-field').classList.add('hidden');
+
+      const fieldMap = { fifa: 'fifa-field', nba: 'nba-field', nhl: 'nhl-field', mlb: 'mlb-field', nfl: 'nfl-field' };
+      document.getElementById(fieldMap[gameState.sport]).classList.remove('hidden');
+
+      const sportNames = { fifa: 'SOCCER', nba: 'BASKETBALL', nhl: 'HOCKEY', mlb: 'BASEBALL', nfl: 'FOOTBALL' };
+      document.getElementById('your-team').textContent = gameState.team;
+      document.getElementById('opponent-team').textContent = ['Arsenal', 'Celtics', 'Penguins', 'Mets', 'Patriots'][['fifa', 'nba', 'nhl', 'mlb', 'nfl'].indexOf(gameState.sport)];
+      document.getElementById('player-name').textContent = `#${gameState.player.number} - ${gameState.player.name.split('/')[gameState.sport === 'fifa' ? 0 : 1]}`;
+      
+      updateMatchDisplay();
+      startGameLoop();
+    }
+
+    function updateMatchDisplay() {
+      document.getElementById('match-score').textContent = `${gameState.yourScore} - ${gameState.opponentScore}`;
+      document.getElementById('stamina').textContent = `${gameState.stamina}%`;
+      document.getElementById('stamina-bar').style.width = `${gameState.stamina}%`;
+      document.getElementById('form').textContent = gameState.stamina > 70 ? 'Excellent' : gameState.stamina > 40 ? 'Good' : 'Tired';
+    }
+
+    function attemptAction(action) {
+      if (gameState.stamina <= 0) return;
+
+      gameState.stamina = Math.max(0, gameState.stamina - 15);
+      gameState.actions++;
+
+      const successRate = action === 'shoot' ? 0.6 : action === 'pass' ? 0.85 : 0.8;
+      const success = Math.random() < successRate;
+
+      if (success && action === 'shoot') {
+        gameState.yourScore++;
+        showFeedback('GOAL!');
+      } else if (success && action === 'pass') {
+        showFeedback('GREAT PASS!');
+      } else if (success && action === 'defend') {
+        showFeedback('BLOCKED!');
+      } else {
+        showFeedback('MISSED!');
+      }
+
+      updateMatchDisplay();
+
+      // AI action
+      setTimeout(() => {
+        if (Math.random() > 0.6) {
+          gameState.opponentScore++;
+        }
+        updateMatchDisplay();
+      }, 800);
+    }
+
+    function showFeedback(text) {
+      const feedback = document.getElementById('action-feedback');
+      feedback.innerHTML = `<div class="orbitron text-6xl font-black text-yellow-300" style="text-shadow: 0 0 30px rgba(253, 224, 71, 0.8);">${text}</div>`;
+      feedback.classList.remove('hidden');
+      setTimeout(() => feedback.classList.add('hidden'), 800);
+    }
+
+    function startGameLoop() {
+      setInterval(() => {
+        if (gameState.sport !== null && gameState.stamina > 0) {
+          gameState.stamina = Math.max(0, gameState.stamina - 1);
+          updateMatchDisplay();
+        }
+      }, 1000);
+    }
+
+    // Initialize
+    document.getElementById('sport-select').classList.remove('hidden');
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ca50e3fa286c44a',t:'MTc3MDQ5MDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
