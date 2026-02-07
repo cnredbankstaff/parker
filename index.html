@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sports Champion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Roboto:wght@400;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body { box-sizing: border-box; }
+    .bebas { font-family: 'Bebas Neue', sans-serif; }
+    .roboto { font-family: 'Roboto', sans-serif; }
+    
+    @keyframes bounce-ball {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 53, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(255, 107, 53, 0.8); }
+    }
+    
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .sport-card {
+      animation: slide-in 0.5s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .sport-card:nth-child(1) { animation-delay: 0.1s; }
+    .sport-card:nth-child(2) { animation-delay: 0.2s; }
+    .sport-card:nth-child(3) { animation-delay: 0.3s; }
+    .sport-card:nth-child(4) { animation-delay: 0.4s; }
+    
+    .sport-card:hover { animation: pulse-glow 1s infinite; }
+    
+    .player-preview {
+      transition: all 0.3s ease;
+    }
+    
+    .game-area {
+      background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%);
+    }
+    
+    .ball {
+      animation: bounce-ball 0.5s ease-in-out infinite;
+    }
+    
+    .goal-flash {
+      animation: goal-celebrate 0.5s ease-out;
+    }
+    
+    @keyframes goal-celebrate {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full m-0 roboto bg-slate-900 text-white overflow-auto">
+  <div id="app" class="h-full w-full flex flex-col"><!-- Screen 1: Sport Selection -->
+   <div id="sport-select-screen" class="h-full w-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <h1 id="game-title" class="bebas text-5xl md:text-7xl text-orange-500 mb-2 tracking-wider">Sports Champion</h1>
+    <p class="text-slate-400 mb-8 text-lg">Choose Your Sport</p>
+    <div class="grid grid-cols-2 gap-4 md:gap-6 max-w-2xl w-full"><!-- Basketball -->
+     <div class="sport-card bg-gradient-to-br from-orange-600 to-orange-800 rounded-2xl p-6 cursor-pointer transform hover:scale-105 transition-transform" onclick="selectSport('basketball')">
+      <div class="text-6xl md:text-8xl mb-3 text-center">
+       🏀
+      </div>
+      <h3 class="bebas text-2xl md:text-3xl text-center text-white">Basketball</h3>
+      <p class="text-orange-200 text-sm text-center mt-1">Shoot hoops!</p>
+     </div><!-- Baseball -->
+     <div class="sport-card bg-gradient-to-br from-red-600 to-red-800 rounded-2xl p-6 cursor-pointer transform hover:scale-105 transition-transform" onclick="selectSport('baseball')">
+      <div class="text-6xl md:text-8xl mb-3 text-center">
+       ⚾
+      </div>
+      <h3 class="bebas text-2xl md:text-3xl text-center text-white">Baseball</h3>
+      <p class="text-red-200 text-sm text-center mt-1">Hit it out!</p>
+     </div><!-- Soccer -->
+     <div class="sport-card bg-gradient-to-br from-green-600 to-green-800 rounded-2xl p-6 cursor-pointer transform hover:scale-105 transition-transform" onclick="selectSport('soccer')">
+      <div class="text-6xl md:text-8xl mb-3 text-center">
+       ⚽
+      </div>
+      <h3 class="bebas text-2xl md:text-3xl text-center text-white">Soccer</h3>
+      <p class="text-green-200 text-sm text-center mt-1">Score goals!</p>
+     </div><!-- Football -->
+     <div class="sport-card bg-gradient-to-br from-amber-700 to-amber-900 rounded-2xl p-6 cursor-pointer transform hover:scale-105 transition-transform" onclick="selectSport('football')">
+      <div class="text-6xl md:text-8xl mb-3 text-center">
+       🏈
+      </div>
+      <h3 class="bebas text-2xl md:text-3xl text-center text-white">Football</h3>
+      <p class="text-amber-200 text-sm text-center mt-1">Touchdown!</p>
+     </div>
+    </div>
+   </div><!-- Screen 2: Player Customization -->
+   <div id="customize-screen" class="h-full w-full hidden flex-col items-center p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-auto"><button onclick="goToSportSelect()" class="self-start mb-4 text-slate-400 hover:text-white transition-colors flex items-center gap-2"> <span>←</span> Back </button>
+    <h2 class="bebas text-4xl md:text-5xl text-orange-500 mb-6">Create Your Player</h2>
+    <div class="flex flex-col md:flex-row gap-8 w-full max-w-4xl items-center md:items-start"><!-- Player Preview -->
+     <div class="flex-shrink-0 bg-slate-800 rounded-2xl p-6 flex flex-col items-center">
+      <div id="player-preview" class="player-preview flex flex-col items-center">
+       <div id="preview-head" class="rounded-full flex items-center justify-center text-3xl" style="width: 60px; height: 60px; background: #f4c794;">
+        😊
+       </div>
+       <div id="preview-body" class="rounded-lg mt-1 flex items-center justify-center" style="width: 50px; height: 80px; background: #3b82f6;"><span id="preview-number" class="bebas text-white text-2xl">23</span>
+       </div>
+       <div id="preview-legs" class="flex gap-1 mt-1">
+        <div class="rounded" style="width: 20px; height: 40px; background: #1e3a5f;"></div>
+        <div class="rounded" style="width: 20px; height: 40px; background: #1e3a5f;"></div>
+       </div>
+      </div>
+      <p class="text-slate-400 mt-4 text-sm">Your Player</p>
+     </div><!-- Customization Options -->
+     <div class="flex-1 space-y-6 w-full max-w-md"><!-- Height -->
+      <div class="bg-slate-800 rounded-xl p-4"><label class="block text-slate-300 mb-2 font-bold">Player Height</label> <input type="range" id="height-slider" min="0.7" max="1.5" step="0.1" value="1" class="w-full accent-orange-500" onchange="updatePlayerPreview()">
+       <div class="flex justify-between text-sm text-slate-500 mt-1"><span>Short</span> <span id="height-label" class="text-orange-400">Medium</span> <span>Tall</span>
+       </div>
+      </div><!-- Skin Tone -->
+      <div class="bg-slate-800 rounded-xl p-4"><label class="block text-slate-300 mb-2 font-bold">Skin Tone</label>
+       <div class="flex gap-2 flex-wrap"><button onclick="setSkinTone('#f9e0c7')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #f9e0c7;"></button> <button onclick="setSkinTone('#f4c794')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #f4c794;"></button> <button onclick="setSkinTone('#d4a574')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #d4a574;"></button> <button onclick="setSkinTone('#a67c52')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #a67c52;"></button> <button onclick="setSkinTone('#8b5a3c')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #8b5a3c;"></button> <button onclick="setSkinTone('#5c3d2e')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #5c3d2e;"></button>
+       </div>
+      </div><!-- Jersey Color -->
+      <div class="bg-slate-800 rounded-xl p-4"><label class="block text-slate-300 mb-2 font-bold">Jersey Color</label>
+       <div class="flex gap-2 flex-wrap"><button onclick="setJerseyColor('#3b82f6', '#1e3a5f')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #3b82f6;"></button> <button onclick="setJerseyColor('#ef4444', '#7f1d1d')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #ef4444;"></button> <button onclick="setJerseyColor('#22c55e', '#14532d')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #22c55e;"></button> <button onclick="setJerseyColor('#a855f7', '#581c87')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #a855f7;"></button> <button onclick="setJerseyColor('#f59e0b', '#78350f')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors" style="background: #f59e0b;"></button> <button onclick="setJerseyColor('#ffffff', '#374151')" class="w-10 h-10 rounded-full border-2 border-transparent hover:border-white transition-colors bg-white"></button>
+       </div>
+      </div><!-- Face Expression -->
+      <div class="bg-slate-800 rounded-xl p-4"><label class="block text-slate-300 mb-2 font-bold">Expression</label>
+       <div class="flex gap-2 flex-wrap"><button onclick="setFace('😊')" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors text-2xl">😊</button> <button onclick="setFace('😎')" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors text-2xl">😎</button> <button onclick="setFace('😤')" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors text-2xl">😤</button> <button onclick="setFace('🔥')" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors text-2xl">🔥</button> <button onclick="setFace('💪')" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors text-2xl">💪</button> <button onclick="setFace('⭐')" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors text-2xl">⭐</button>
+       </div>
+      </div><!-- Jersey Number -->
+      <div class="bg-slate-800 rounded-xl p-4"><label class="block text-slate-300 mb-2 font-bold">Jersey Number</label> <input type="number" id="jersey-number" min="0" max="99" value="23" class="w-20 bg-slate-700 text-white text-center rounded-lg p-2 text-xl bebas" onchange="updatePlayerPreview()">
+      </div><!-- Play Button --> <button onclick="startGame()" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white bebas text-2xl py-4 rounded-xl transition-all transform hover:scale-105 shadow-lg"> 🎮 START GAME </button>
+     </div>
+    </div>
+   </div><!-- Screen 3: Game Screen -->
+   <div id="game-screen" class="h-full w-full hidden flex-col"><!-- Game Header -->
+    <div class="bg-slate-900 p-3 flex justify-between items-center"><button onclick="goToCustomize()" class="text-slate-400 hover:text-white transition-colors">← Back</button>
+     <div class="text-center"><span id="game-sport-title" class="bebas text-2xl text-orange-500">Basketball</span>
+     </div>
+     <div class="text-right"><span class="text-slate-400 text-sm">Score:</span> <span id="score" class="bebas text-2xl text-white ml-1">0</span>
+     </div>
+    </div><!-- Game Area -->
+    <div id="game-area" class="flex-1 relative overflow-hidden game-area"><!-- Basketball Court -->
+     <div id="basketball-game" class="hidden h-full w-full relative">
+      <div class="absolute top-4 left-1/2 transform -translate-x-1/2">
+       <div id="hoop" class="relative">
+        <div class="w-24 h-2 bg-orange-600 rounded"></div>
+        <div class="absolute -bottom-16 left-1/2 transform -translate-x-1/2 w-20 h-16 border-4 border-orange-400 rounded-b-full border-t-0"></div>
+        <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-red-500"></div>
+       </div>
+      </div>
+      <div id="basketball-player" class="absolute bottom-20 left-1/2 transform -translate-x-1/2 cursor-pointer"></div>
+      <div id="basketball" class="absolute text-5xl ball hidden">
+       🏀
+      </div>
+      <p class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/70 text-sm">Click/Tap player to shoot!</p>
+     </div><!-- Baseball Field -->
+     <div id="baseball-game" class="hidden h-full w-full relative" style="background: linear-gradient(to bottom, #87ceeb 0%, #87ceeb 40%, #8b7355 40%, #8b7355 100%);">
+      <div class="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-40 h-40">
+       <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white rotate-45"></div>
+      </div>
+      <div id="baseball-player" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 cursor-pointer"></div>
+      <div id="baseball" class="absolute text-4xl hidden">
+       ⚾
+      </div>
+      <div id="pitch-zone" class="absolute bottom-32 left-1/2 transform -translate-x-1/2 w-16 h-20 border-2 border-white/30 rounded"></div>
+      <p class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/70 text-sm">Click when ball enters zone!</p>
+     </div><!-- Soccer Field -->
+     <div id="soccer-game" class="hidden h-full w-full relative">
+      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-48 h-20 border-4 border-white/50 border-t-0 bg-black/20">
+       <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-full h-2 bg-white/30"></div>
+      </div>
+      <div id="goalkeeper" class="absolute top-16 left-1/2 transform -translate-x-1/2 text-4xl">
+       🧤
+      </div>
+      <div id="soccer-player" class="absolute bottom-20 left-1/2 transform -translate-x-1/2 cursor-pointer"></div>
+      <div id="soccer-ball" class="absolute text-4xl hidden">
+       ⚽
+      </div>
+      <p class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/70 text-sm">Click to kick! Aim left, center, or right!</p>
+      <div class="absolute bottom-28 left-1/2 transform -translate-x-1/2 flex gap-8"><button onclick="kickSoccer('left')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-lg text-white">← Left</button> <button onclick="kickSoccer('center')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-lg text-white">Center</button> <button onclick="kickSoccer('right')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-lg text-white">Right →</button>
+      </div>
+     </div><!-- Football Field -->
+     <div id="football-game" class="hidden h-full w-full relative" style="background: linear-gradient(to bottom, #2d5a3d 0%, #1a472a 100%);">
+      <div class="absolute top-0 left-0 right-0 h-full flex">
+       <div class="flex-1 border-r border-white/20"></div>
+       <div class="flex-1 border-r border-white/20"></div>
+       <div class="flex-1 border-r border-white/20"></div>
+       <div class="flex-1 border-r border-white/20"></div>
+       <div class="flex-1"></div>
+      </div>
+      <div class="absolute top-4 left-1/2 transform -translate-x-1/2">
+       <div class="text-6xl">
+        🥅
+       </div>
+      </div>
+      <div id="football-player" class="absolute bottom-20 left-1/2 transform -translate-x-1/2 cursor-pointer"></div>
+      <div id="football" class="absolute text-4xl hidden">
+       🏈
+      </div>
+      <div id="defenders" class="absolute top-1/2 left-0 right-0 flex justify-around"><span class="text-3xl">🏃</span> <span class="text-3xl">🏃</span> <span class="text-3xl">🏃</span>
+      </div>
+      <p class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/70 text-sm">Click player to throw! Time it between defenders!</p>
+     </div><!-- Score Popup -->
+     <div id="score-popup" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden">
+      <div class="bebas text-6xl text-yellow-400 animate-bounce">
+       SCORE!
+      </div>
+     </div><!-- Miss Popup -->
+     <div id="miss-popup" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden">
+      <div class="bebas text-4xl text-red-400">
+       MISS!
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Game State
+    let gameState = {
+      sport: null,
+      player: {
+        height: 1,
+        skinTone: '#f4c794',
+        jerseyColor: '#3b82f6',
+        pantsColor: '#1e3a5f',
+        face: '😊',
+        number: 23
+      },
+      score: 0,
+      isAnimating: false
+    };
+
+    // Config for Element SDK
+    const defaultConfig = {
+      game_title: 'Sports Champion'
+    };
+
+    let config = { ...defaultConfig };
+
+    // Element SDK initialization
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = { ...defaultConfig, ...newConfig };
+          document.getElementById('game-title').textContent = config.game_title || defaultConfig.game_title;
+        },
+        mapToCapabilities: (config) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['game_title', config.game_title || defaultConfig.game_title]
+        ])
+      });
+    }
+
+    // Navigation Functions
+    function selectSport(sport) {
+      gameState.sport = sport;
+      document.getElementById('sport-select-screen').classList.add('hidden');
+      document.getElementById('customize-screen').classList.remove('hidden');
+      document.getElementById('customize-screen').classList.add('flex');
+      updatePlayerPreview();
+    }
+
+    function goToSportSelect() {
+      document.getElementById('customize-screen').classList.add('hidden');
+      document.getElementById('customize-screen').classList.remove('flex');
+      document.getElementById('sport-select-screen').classList.remove('hidden');
+    }
+
+    function goToCustomize() {
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('flex');
+      document.getElementById('customize-screen').classList.remove('hidden');
+      document.getElementById('customize-screen').classList.add('flex');
+    }
+
+    function startGame() {
+      document.getElementById('customize-screen').classList.add('hidden');
+      document.getElementById('customize-screen').classList.remove('flex');
+      document.getElementById('game-screen').classList.remove('hidden');
+      document.getElementById('game-screen').classList.add('flex');
+      
+      gameState.score = 0;
+      document.getElementById('score').textContent = '0';
+      
+      // Hide all games first
+      document.getElementById('basketball-game').classList.add('hidden');
+      document.getElementById('baseball-game').classList.add('hidden');
+      document.getElementById('soccer-game').classList.add('hidden');
+      document.getElementById('football-game').classList.add('hidden');
+      
+      // Show selected game
+      const sportNames = {
+        basketball: 'Basketball',
+        baseball: 'Baseball',
+        soccer: 'Soccer',
+        football: 'Football'
+      };
+      document.getElementById('game-sport-title').textContent = sportNames[gameState.sport];
+      document.getElementById(`${gameState.sport}-game`).classList.remove('hidden');
+      
+      // Render player in game
+      renderGamePlayer();
+      
+      // Start game-specific logic
+      if (gameState.sport === 'baseball') {
+        startBaseballPitching();
+      }
+    }
+
+    // Player Customization Functions
+    function updatePlayerPreview() {
+      const height = parseFloat(document.getElementById('height-slider').value);
+      gameState.player.height = height;
+      gameState.player.number = parseInt(document.getElementById('jersey-number').value) || 0;
+      
+      const heightLabel = document.getElementById('height-label');
+      if (height < 0.9) heightLabel.textContent = 'Short';
+      else if (height > 1.2) heightLabel.textContent = 'Tall';
+      else heightLabel.textContent = 'Medium';
+      
+      renderPreviewPlayer();
+    }
+
+    function setSkinTone(color) {
+      gameState.player.skinTone = color;
+      renderPreviewPlayer();
+    }
+
+    function setJerseyColor(jersey, pants) {
+      gameState.player.jerseyColor = jersey;
+      gameState.player.pantsColor = pants;
+      renderPreviewPlayer();
+    }
+
+    function setFace(face) {
+      gameState.player.face = face;
+      renderPreviewPlayer();
+    }
+
+    function renderPreviewPlayer() {
+      const p = gameState.player;
+      const scale = p.height;
+      
+      const headSize = 60 * scale;
+      const bodyWidth = 50 * scale;
+      const bodyHeight = 80 * scale;
+      const legWidth = 20 * scale;
+      const legHeight = 40 * scale;
+      const fontSize = 24 * scale;
+      const faceSize = 30 * scale;
+      
+      document.getElementById('preview-head').style.cssText = `
+        width: ${headSize}px; height: ${headSize}px; background: ${p.skinTone};
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: ${faceSize}px;
+      `;
+      document.getElementById('preview-head').textContent = p.face;
+      
+      document.getElementById('preview-body').style.cssText = `
+        width: ${bodyWidth}px; height: ${bodyHeight}px; background: ${p.jerseyColor};
+        border-radius: 8px; margin-top: 4px; display: flex; align-items: center; justify-content: center;
+      `;
+      document.getElementById('preview-number').style.fontSize = `${fontSize}px`;
+      document.getElementById('preview-number').textContent = p.number;
+      
+      document.getElementById('preview-legs').innerHTML = `
+        <div style="width: ${legWidth}px; height: ${legHeight}px; background: ${p.pantsColor}; border-radius: 4px;"></div>
+        <div style="width: ${legWidth}px; height: ${legHeight}px; background: ${p.pantsColor}; border-radius: 4px;"></div>
+      `;
+    }
+
+    function renderGamePlayer() {
+      const p = gameState.player;
+      const scale = p.height;
+      
+      const headSize = 50 * scale;
+      const bodyWidth = 40 * scale;
+      const bodyHeight = 60 * scale;
+      const legWidth = 16 * scale;
+      const legHeight = 30 * scale;
+      const fontSize = 20 * scale;
+      const faceSize = 24 * scale;
+      
+      const playerHTML = `
+        <div class="flex flex-col items-center">
+          <div style="width: ${headSize}px; height: ${headSize}px; background: ${p.skinTone}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: ${faceSize}px;">${p.face}</div>
+          <div style="width: ${bodyWidth}px; height: ${bodyHeight}px; background: ${p.jerseyColor}; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; justify-content: center;">
+            <span class="bebas text-white" style="font-size: ${fontSize}px;">${p.number}</span>
+          </div>
+          <div style="display: flex; gap: 2px; margin-top: 2px;">
+            <div style="width: ${legWidth}px; height: ${legHeight}px; background: ${p.pantsColor}; border-radius: 4px;"></div>
+            <div style="width: ${legWidth}px; height: ${legHeight}px; background: ${p.pantsColor}; border-radius: 4px;"></div>
+          </div>
+        </div>
+      `;
+      
+      const playerContainer = document.getElementById(`${gameState.sport}-player`);
+      if (playerContainer) {
+        playerContainer.innerHTML = playerHTML;
+        playerContainer.onclick = () => handlePlayerClick();
+      }
+    }
+
+    // Game Mechanics
+    function handlePlayerClick() {
+      if (gameState.isAnimating) return;
+      
+      switch(gameState.sport) {
+        case 'basketball':
+          shootBasketball();
+          break;
+        case 'football':
+          throwFootball();
+          break;
+      }
+    }
+
+    function shootBasketball() {
+      if (gameState.isAnimating) return;
+      gameState.isAnimating = true;
+      
+      const ball = document.getElementById('basketball');
+      const player = document.getElementById('basketball-player');
+      const playerRect = player.getBoundingClientRect();
+      const gameArea = document.getElementById('basketball-game');
+      const gameRect = gameArea.getBoundingClientRect();
+      
+      ball.style.left = `${playerRect.left - gameRect.left + playerRect.width/2 - 25}px`;
+      ball.style.bottom = `${gameRect.bottom - playerRect.top + 20}px`;
+      ball.classList.remove('hidden');
+      
+      // Animate ball to hoop
+      const hoopX = gameRect.width / 2 - 25;
+      const success = Math.random() > 0.4;
+      
+      ball.style.transition = 'all 0.8s ease-out';
+      ball.style.left = `${hoopX}px`;
+      ball.style.bottom = success ? `${gameRect.height - 100}px` : `${gameRect.height - 60}px`;
+      
+      setTimeout(() => {
+        if (success) {
+          showScore();
+          ball.style.transition = 'all 0.3s ease-in';
+          ball.style.bottom = '50%';
+        } else {
+          showMiss();
+          ball.style.transition = 'all 0.5s ease-in';
+          ball.style.left = `${Math.random() > 0.5 ? hoopX + 100 : hoopX - 100}px`;
+          ball.style.bottom = '0px';
+        }
+        
+        setTimeout(() => {
+          ball.classList.add('hidden');
+          ball.style.transition = '';
+          gameState.isAnimating = false;
+        }, 500);
+      }, 800);
+    }
+
+    // Baseball Game
+    let baseballInterval = null;
+    function startBaseballPitching() {
+      const ball = document.getElementById('baseball');
+      const pitchZone = document.getElementById('pitch-zone');
+      const gameArea = document.getElementById('baseball-game');
+      
+      function pitch() {
+        if (gameState.sport !== 'baseball') {
+          clearInterval(baseballInterval);
+          return;
+        }
+        
+        ball.classList.remove('hidden');
+        ball.style.top = '10%';
+        ball.style.left = '50%';
+        ball.style.transform = 'translateX(-50%)';
+        ball.style.transition = 'top 1.2s linear';
+        
+        setTimeout(() => {
+          ball.style.top = '75%';
+        }, 50);
+        
+        setTimeout(() => {
+          ball.classList.add('hidden');
+          ball.style.transition = '';
+          ball.style.top = '10%';
+        }, 1300);
+      }
+      
+      // Click handler for batting
+      gameArea.onclick = (e) => {
+        if (gameState.isAnimating) return;
+        
+        const ballRect = ball.getBoundingClientRect();
+        const zoneRect = pitchZone.getBoundingClientRect();
+        
+        // Check if ball is in zone
+        if (ballRect.top >= zoneRect.top - 20 && ballRect.bottom <= zoneRect.bottom + 40) {
+          gameState.isAnimating = true;
+          showScore();
+          ball.classList.add('hidden');
+          setTimeout(() => { gameState.isAnimating = false; }, 500);
+        } else if (!ball.classList.contains('hidden')) {
+          showMiss();
+        }
+      };
+      
+      baseballInterval = setInterval(pitch, 2500);
+      pitch();
+    }
+
+    // Soccer Game
+    function kickSoccer(direction) {
+      if (gameState.isAnimating) return;
+      gameState.isAnimating = true;
+      
+      const ball = document.getElementById('soccer-ball');
+      const goalkeeper = document.getElementById('goalkeeper');
+      const gameArea = document.getElementById('soccer-game');
+      const gameRect = gameArea.getBoundingClientRect();
+      
+      // Position ball at player
+      ball.style.left = '50%';
+      ball.style.bottom = '120px';
+      ball.style.transform = 'translateX(-50%)';
+      ball.classList.remove('hidden');
+      
+      // Goalkeeper dives randomly
+      const goalkeeperDive = ['left', 'center', 'right'][Math.floor(Math.random() * 3)];
+      
+      const targetX = direction === 'left' ? '25%' : direction === 'right' ? '75%' : '50%';
+      
+      setTimeout(() => {
+        // Move goalkeeper
+        goalkeeper.style.transition = 'all 0.4s ease-out';
+        goalkeeper.style.left = goalkeeperDive === 'left' ? '30%' : goalkeeperDive === 'right' ? '70%' : '50%';
+        
+        // Move ball
+        ball.style.transition = 'all 0.5s ease-out';
+        ball.style.left = targetX;
+        ball.style.bottom = '80%';
+      }, 100);
+      
+      setTimeout(() => {
+        const scored = direction !== goalkeeperDive;
+        if (scored) {
+          showScore();
+        } else {
+          showMiss();
+        }
+        
+        // Reset
+        setTimeout(() => {
+          ball.classList.add('hidden');
+          ball.style.transition = '';
+          goalkeeper.style.transition = 'all 0.3s ease-out';
+          goalkeeper.style.left = '50%';
+          gameState.isAnimating = false;
+        }, 500);
+      }, 600);
+    }
+
+    // Football Game
+    function throwFootball() {
+      if (gameState.isAnimating) return;
+      gameState.isAnimating = true;
+      
+      const ball = document.getElementById('football');
+      const gameArea = document.getElementById('football-game');
+      const defenders = document.getElementById('defenders');
+      const gameRect = gameArea.getBoundingClientRect();
+      
+      ball.style.left = '50%';
+      ball.style.bottom = '100px';
+      ball.style.transform = 'translateX(-50%)';
+      ball.classList.remove('hidden');
+      
+      // Random success based on timing
+      const success = Math.random() > 0.35;
+      
+      setTimeout(() => {
+        ball.style.transition = 'all 0.8s ease-out';
+        ball.style.bottom = success ? '85%' : '55%';
+      }, 100);
+      
+      setTimeout(() => {
+        if (success) {
+          showScore();
+        } else {
+          showMiss();
+        }
+        
+        setTimeout(() => {
+          ball.classList.add('hidden');
+          ball.style.transition = '';
+          gameState.isAnimating = false;
+        }, 500);
+      }, 900);
+    }
+
+    // Score Display
+    function showScore() {
+      gameState.score++;
+      document.getElementById('score').textContent = gameState.score;
+      
+      const popup = document.getElementById('score-popup');
+      popup.classList.remove('hidden');
+      setTimeout(() => popup.classList.add('hidden'), 1000);
+    }
+
+    function showMiss() {
+      const popup = document.getElementById('miss-popup');
+      popup.classList.remove('hidden');
+      setTimeout(() => popup.classList.add('hidden'), 800);
+    }
+
+    // Initialize preview
+    renderPreviewPlayer();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ca4ff5c420ec44a',t:'MTc3MDQ4OTQzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
