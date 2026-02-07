@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NHL Hockey Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&amp;family=JetBrains+Mono:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body { box-sizing: border-box; }
+    html, body, #app { height: 100%; width: 100%; }
+    
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    @keyframes ice-shimmer {
+      0%, 100% { opacity: 1; filter: brightness(1); }
+      50% { opacity: 0.98; filter: brightness(1.02); }
+    }
+    
+    @keyframes goal-explosion {
+      0% { transform: scale(0.8); opacity: 0; }
+      40% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+    
+    @keyframes player-skate {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-2px); }
+    }
+    
+    @keyframes puck-spin {
+      0% { transform: rotateZ(0deg); }
+      100% { transform: rotateZ(360deg); }
+    }
+    
+    .ice-screen {
+      animation: ice-shimmer 0.1s infinite;
+    }
+    
+    .vr-hud {
+      position: fixed;
+      font-family: 'JetBrains Mono', monospace;
+      color: #00ff88;
+      text-shadow: 0 0 15px #00ff88;
+      z-index: 100;
+      background: rgba(0, 20, 40, 0.75);
+      border: 2px solid #00ff88;
+      backdrop-filter: blur(8px);
+      border-radius: 4px;
+    }
+    
+    .stat-bar {
+      height: 8px;
+      background: rgba(0, 100, 50, 0.5);
+      border: 1px solid #00ff88;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .stat-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff88, #00ffff);
+      transition: width 0.2s ease;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="m-0 overflow-hidden bg-black text-white">
+  <div id="app" class="w-full h-full flex flex-col"><!-- NHL Hockey Game -->
+   <div id="hockey-game" class="h-full w-full flex flex-col bg-black overflow-hidden"><!-- Hockey Rink - Authentic NHL -->
+    <div id="rink-viewport" class="flex-1 relative overflow-hidden ice-screen">
+     <svg class="absolute inset-0 w-full h-full" viewbox="0 0 1100 500" preserveaspectratio="none"><!-- Ice background with gradient --> <defs>
+       <lineargradient id="iceGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#e8f4f8;stop-opacity:1" />
+        <stop offset="50%" style="stop-color:#d0e8f0;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#c0e0e8;stop-opacity:1" />
+       </lineargradient>
+      </defs> <!-- Ice rink --> <rect width="1100" height="500" fill="url(#iceGrad)" /> <!-- Board borders (blue) --> <rect x="0" y="0" width="1100" height="500" fill="none" stroke="#003d82" stroke-width="8" /> <!-- Center line (red) --> <line x1="550" y1="0" x2="550" y2="500" stroke="#ff0000" stroke-width="1" /> <!-- Blue lines (defensive) --> <line x1="275" y1="0" x2="275" y2="500" stroke="#0052cc" stroke-width="3" /> <line x1="825" y1="0" x2="825" y2="500" stroke="#0052cc" stroke-width="3" /> <!-- Goal lines (red) --> <line x1="110" y1="0" x2="110" y2="500" stroke="#ff0000" stroke-width="2" /> <line x1="990" y1="0" x2="990" y2="500" stroke="#ff0000" stroke-width="2" /> <!-- Center circle --> <circle cx="550" cy="250" r="50" fill="none" stroke="#ff0000" stroke-width="1.5" /> <circle cx="550" cy="250" r="25" fill="none" stroke="#ff0000" stroke-width="1" /> <!-- Left zone circle --> <circle cx="275" cy="250" r="45" fill="none" stroke="#0052cc" stroke-width="1.5" /> <!-- Right zone circle --> <circle cx="825" cy="250" r="45" fill="none" stroke="#0052cc" stroke-width="1.5" /> <!-- Left goal crease --> <path d="M 50 180 L 110 180 Q 125 180 125 200 L 125 300 Q 125 320 110 320 L 50 320 Z" fill="none" stroke="#ff0000" stroke-width="1.5" stroke-dasharray="3,3" /> <!-- Right goal crease --> <path d="M 1050 180 L 990 180 Q 975 180 975 200 L 975 300 Q 975 320 990 320 L 1050 320 Z" fill="none" stroke="#ff0000" stroke-width="1.5" stroke-dasharray="3,3" /> <!-- Left goal --> <rect x="20" y="210" width="30" height="80" fill="none" stroke="#000000" stroke-width="2" /> <!-- Right goal --> <rect x="1050" y="210" width="30" height="80" fill="none" stroke="#000000" stroke-width="2" />
+     </svg><!-- Players container -->
+     <div id="hockey-players" class="absolute inset-0"></div><!-- Puck container -->
+     <div id="hockey-puck" class="absolute w-8 h-1 bg-black rounded-full shadow-lg" style="left: 50%; top: 45%; animation: puck-spin 0.5s linear infinite;"></div>
+    </div><!-- HUD - Top Left (Team Info) -->
+    <div class="vr-hud top-4 left-4 p-4 text-xs w-48">
+     <div class="mb-3">
+      <div class="font-bold text-sm mb-1">
+       TEAM STATS
+      </div>
+      <div class="text-yellow-300 font-bold text-lg">
+       BLUES 🔵 vs REDS 🔴
+      </div>
+      <div class="mt-2 text-lg font-bold">
+       <span id="hud-score-you">0</span> - <span id="hud-score-opp">0</span>
+      </div>
+     </div>
+     <div class="border-t border-green-500 pt-2">
+      <div>
+       Possession: <span id="hud-possession">50%</span>
+      </div>
+      <div class="stat-bar mt-1">
+       <div class="stat-fill" id="possession-bar" style="width: 50%;"></div>
+      </div>
+     </div>
+    </div><!-- HUD - Top Center (Game Info) -->
+    <div class="vr-hud top-4 left-1/2 transform -translate-x-1/2 p-4 text-xs text-center">
+     <div class="text-sm font-bold mb-1" id="period-display">
+      PERIOD 1
+     </div>
+     <div class="text-lg font-bold mono" id="time-display">
+      20:00
+     </div>
+    </div><!-- HUD - Top Right (Player Stats) -->
+    <div class="vr-hud top-4 right-4 p-4 text-xs w-48">
+     <div class="font-bold text-sm mb-2">
+      YOUR PLAYER #7
+     </div>
+     <div class="space-y-1 text-xs">
+      <div>
+       Speed: <span id="hud-speed">0</span> mph
+      </div>
+      <div class="stat-bar mt-0.5">
+       <div class="stat-fill" id="speed-bar" style="width: 0%;"></div>
+      </div>
+      <div class="mt-2">
+       Stamina: <span id="hud-stamina">100%</span>
+      </div>
+      <div class="stat-bar mt-0.5">
+       <div class="stat-fill" id="stamina-bar" style="width: 100%;"></div>
+      </div>
+      <div class="mt-2">
+       Fatigue: <span id="hud-form">FRESH</span>
+      </div>
+     </div>
+    </div><!-- HUD - Bottom Left (Controls) -->
+    <div class="vr-hud bottom-4 left-4 p-3 text-xs">
+     <div class="font-bold mb-2 text-yellow-300">
+      CONTROLS
+     </div>
+     <div class="space-y-1 text-xs">
+      <div>
+       ↑ ↓ ← → SKATE
+      </div>
+      <div>
+       SPACE SHOOT (near puck)
+      </div>
+      <div>
+       P PASS (hold + direction)
+      </div>
+      <div>
+       D CHECK/DEFEND
+      </div>
+      <div>
+       C CHANGE PLAYER
+      </div>
+      <div>
+       ESC QUIT
+      </div>
+     </div>
+    </div><!-- HUD - Bottom Center (Puck Status) -->
+    <div class="vr-hud bottom-4 left-1/2 transform -translate-x-1/2 p-3 text-xs text-center">
+     <div id="puck-status" class="text-yellow-300 font-bold">
+      PUCK IN PLAY
+     </div>
+     <div id="possession-team" class="mt-1 text-sm">
+      NEUTRAL
+     </div>
+    </div><!-- HUD - Bottom Right (Advanced Stats) -->
+    <div class="vr-hud bottom-4 right-4 p-3 text-xs w-48">
+     <div class="font-bold mb-2">
+      GAME STATS
+     </div>
+     <div class="space-y-1 text-xs">
+      <div>
+       Shots on Goal: <span id="shots-you">0</span> - <span id="shots-opp">0</span>
+      </div>
+      <div>
+       Hits: <span id="hits-you">0</span> - <span id="hits-opp">0</span>
+      </div>
+      <div>
+       Passing Acc: <span id="pass-accuracy">--</span>%
+      </div>
+     </div>
+    </div><!-- Goal Animation -->
+    <div id="goal-anim" class="absolute top-1/4 left-1/2 transform -translate-x-1/2 hidden">
+     <div class="orbitron text-9xl font-black text-red-400" style="text-shadow: 0 0 50px rgba(255, 50, 50, 1); animation: goal-explosion 1.5s ease-out;">
+      ⚡ GOAL! ⚡
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const gameState = {
+      // Player position
+      playerX: 0,
+      playerY: 0,
+      playerZ: 0,
+      
+      // Player stats
+      speed: 0,
+      stamina: 100,
+      maxStamina: 100,
+      fatigue: 0,
+      passes: 0,
+      passesAccurate: 0,
+      shots: 0,
+      shotsOnGoal: 0,
+      hits: 0,
+      
+      // Puck physics
+      puckX: 0,
+      puckY: 0,
+      puckZ: 0,
+      puckVelX: 0,
+      puckVelY: 0,
+      puckVelZ: 0,
+      puckVelDecay: 0.98,
+      
+      // Game state
+      yourScore: 0,
+      opponentScore: 0,
+      possession: 'neutral',
+      hasPuck: false,
+      period: 1,
+      timeRemaining: 1200, // 20 minutes in seconds
+      gameRunning: true,
+      
+      // Team management
+      activePlayerIndex: 0,
+      selectedPlayer: null
+    };
+
+    const keys = {};
+    const rinkDimensions = {
+      width: 200, // feet
+      length: 85,
+      boardHeight: 3.5
+    };
+
+    const defaultConfig = { game_title: 'NHL Hockey Simulator' };
+    let config = { ...defaultConfig };
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = { ...defaultConfig, ...newConfig };
+        },
+        mapToCapabilities: () => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
+        mapToEditPanelValues: (config) => new Map([['game_title', config.game_title]])
+      });
+    }
+
+    // Team rosters
+    const teams = {
+      home: {
+        name: 'BLUES',
+        color: '#0066ff',
+        roster: [
+          { num: 7, pos: 'RW', name: 'Player', x: -20, z: -10 },
+          { num: 11, pos: 'C', name: 'Center', x: -10, z: 0 },
+          { num: 14, pos: 'LW', name: 'Left', x: 0, z: 10 },
+          { num: 23, pos: 'D', name: 'Def1', x: -40, z: -20 },
+          { num: 26, pos: 'D', name: 'Def2', x: -35, z: 20 },
+          { num: 31, pos: 'G', name: 'Goalie', x: -85, z: 0 }
+        ]
+      },
+      away: {
+        name: 'REDS',
+        color: '#ff2222',
+        roster: [
+          { num: 9, pos: 'LW', name: 'Opp1', x: 20, z: 10 },
+          { num: 19, pos: 'C', name: 'OppC', x: 10, z: 0 },
+          { num: 22, pos: 'RW', name: 'Opp2', x: 0, z: -10 },
+          { num: 4, pos: 'D', name: 'OppD1', x: 40, z: 20 },
+          { num: 6, pos: 'D', name: 'OppD2', x: 35, z: -20 },
+          { num: 30, pos: 'G', name: 'OppG', x: 85, z: 0 }
+        ]
+      }
+    };
+
+    // Keyboard handling
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.key === ' ' && gameState.hasPuck) attemptAction('shoot');
+      if (e.key.toLowerCase() === 'p') attemptAction('pass');
+      if (e.key.toLowerCase() === 'd') attemptAction('check');
+      if (e.key.toLowerCase() === 'c') changePlayer();
+      if (e.key === 'Escape') window.location.reload();
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    function updatePlayerPosition() {
+      const moveSpeed = 2;
+      let moveX = 0, moveZ = 0;
+
+      if (keys['arrowup'] || keys['w']) moveZ += moveSpeed;
+      if (keys['arrowdown'] || keys['s']) moveZ -= moveSpeed;
+      if (keys['arrowleft'] || keys['a']) moveX -= moveSpeed;
+      if (keys['arrowright'] || keys['d']) moveX += moveSpeed;
+
+      if (moveX !== 0 || moveZ !== 0) {
+        gameState.playerX = Math.max(-85, Math.min(85, gameState.playerX + moveX));
+        gameState.playerZ = Math.max(-100, Math.min(100, gameState.playerZ + moveZ));
+        gameState.speed = Math.sqrt(moveX * moveX + moveZ * moveZ) * 20;
+        gameState.stamina = Math.max(0, gameState.stamina - 0.4);
+        gameState.fatigue = 100 - gameState.stamina;
+      } else {
+        gameState.speed = 0;
+        gameState.stamina = Math.min(100, gameState.stamina + 0.15);
+      }
+
+      // Bounds checking
+      gameState.playerX = Math.max(-85, Math.min(85, gameState.playerX));
+      gameState.playerZ = Math.max(-100, Math.min(100, gameState.playerZ));
+    }
+
+    function updatePuckPhysics() {
+      if (gameState.hasPuck) {
+        gameState.puckX = gameState.playerX + 5;
+        gameState.puckY = gameState.playerY;
+        gameState.puckZ = gameState.playerZ + 3;
+        gameState.puckVelX = 0;
+        gameState.puckVelZ = 0;
+      } else {
+        gameState.puckX += gameState.puckVelX;
+        gameState.puckZ += gameState.puckVelZ;
+        gameState.puckVelX *= gameState.puckVelDecay;
+        gameState.puckVelZ *= gameState.puckVelDecay;
+
+        // Wall bounces
+        if (Math.abs(gameState.puckX) > 85) gameState.puckVelX *= -0.8;
+        if (Math.abs(gameState.puckZ) > 100) gameState.puckVelZ *= -0.8;
+
+        // Boundary constraints
+        gameState.puckX = Math.max(-85, Math.min(85, gameState.puckX));
+        gameState.puckZ = Math.max(-100, Math.min(100, gameState.puckZ));
+
+        // Check possession
+        const distToPuck = Math.sqrt(
+          Math.pow(gameState.puckX - gameState.playerX, 2) +
+          Math.pow(gameState.puckZ - gameState.playerZ, 2)
+        );
+        if (distToPuck < 5) {
+          gameState.hasPuck = true;
+        }
+      }
+    }
+
+    function renderGame() {
+      const playersContainer = document.getElementById('hockey-players');
+      const puckElement = document.getElementById('hockey-puck');
+      playersContainer.innerHTML = '';
+
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight - 100;
+
+      // 3rd person camera
+      const cameraOffsetX = 0;
+      const cameraOffsetZ = -30;
+
+      function worldToScreen(worldX, worldZ) {
+        const relX = worldX - gameState.playerX;
+        const relZ = worldZ - (gameState.playerZ + cameraOffsetZ);
+        
+        const scale = Math.max(0.1, 50 / (relZ + 50));
+        const screenX = screenWidth / 2 + relX * scale * 15;
+        const screenY = screenHeight / 2 - relZ * scale * 10;
+        
+        return { x: screenX, y: screenY, scale: scale };
+      }
+
+      // Render your player (white jersey)
+      const playerPos = worldToScreen(gameState.playerX, gameState.playerZ);
+      const playerDiv = document.createElement('div');
+      playerDiv.style.position = 'absolute';
+      playerDiv.style.left = playerPos.x + 'px';
+      playerDiv.style.top = playerPos.y + 'px';
+      playerDiv.style.width = (40 * playerPos.scale) + 'px';
+      playerDiv.style.height = (50 * playerPos.scale) + 'px';
+      playerDiv.innerHTML = `
+        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #0066ff; font-size: ${12 * playerPos.scale}px; box-shadow: 0 0 20px rgba(0, 100, 255, 0.8);">7</div>
+      `;
+      playerDiv.style.transform = 'translate(-50%, -50%)';
+      playersContainer.appendChild(playerDiv);
+
+      // Render teammates
+      const teammates = teams.home.roster.filter(p => p.pos !== 'G');
+      teammates.forEach((tm, idx) => {
+        const aiX = tm.x + Math.sin(Date.now() / 2000 + idx) * 8;
+        const aiZ = tm.z + Math.cos(Date.now() / 2000 + idx) * 8;
+        const pos = worldToScreen(aiX, aiZ);
+        
+        if (pos.scale > 0) {
+          const tmDiv = document.createElement('div');
+          tmDiv.style.position = 'absolute';
+          tmDiv.style.left = pos.x + 'px';
+          tmDiv.style.top = pos.y + 'px';
+          tmDiv.style.width = (35 * pos.scale) + 'px';
+          tmDiv.style.height = (45 * pos.scale) + 'px';
+          tmDiv.innerHTML = `
+            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #0066ff 0%, #0044aa 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: ${10 * pos.scale}px; box-shadow: 0 0 15px rgba(0, 100, 255, 0.6);">${tm.num}</div>
+          `;
+          tmDiv.style.transform = 'translate(-50%, -50%)';
+          playersContainer.appendChild(tmDiv);
+        }
+      });
+
+      // Render opponents
+      const opponents = teams.away.roster.filter(p => p.pos !== 'G');
+      opponents.forEach((opp, idx) => {
+        const aiX = opp.x + Math.sin(Date.now() / 1800 + idx) * 10;
+        const aiZ = opp.z + Math.cos(Date.now() / 1800 + idx) * 10;
+        const pos = worldToScreen(aiX, aiZ);
+        
+        if (pos.scale > 0) {
+          const oppDiv = document.createElement('div');
+          oppDiv.style.position = 'absolute';
+          oppDiv.style.left = pos.x + 'px';
+          oppDiv.style.top = pos.y + 'px';
+          oppDiv.style.width = (35 * pos.scale) + 'px';
+          oppDiv.style.height = (45 * pos.scale) + 'px';
+          oppDiv.innerHTML = `
+            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #ff2222 0%, #cc0000 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: ${10 * pos.scale}px; box-shadow: 0 0 15px rgba(255, 50, 50, 0.6);">${opp.num}</div>
+          `;
+          oppDiv.style.transform = 'translate(-50%, -50%)';
+          playersContainer.appendChild(oppDiv);
+        }
+      });
+
+      // Render goalies
+      const homeGoalie = teams.home.roster.find(p => p.pos === 'G');
+      const awayGoalie = teams.away.roster.find(p => p.pos === 'G');
+      
+      [homeGoalie, awayGoalie].forEach((goalie, idx) => {
+        const pos = worldToScreen(goalie.x, goalie.z);
+        if (pos.scale > 0) {
+          const glDiv = document.createElement('div');
+          glDiv.style.position = 'absolute';
+          glDiv.style.left = pos.x + 'px';
+          glDiv.style.top = pos.y + 'px';
+          glDiv.style.width = (45 * pos.scale) + 'px';
+          glDiv.style.height = (60 * pos.scale) + 'px';
+          glDiv.innerHTML = `
+            <div style="width: 100%; height: 100%; background: ${idx === 0 ? 'linear-gradient(135deg, #0066ff 0%, #004499 100%)' : 'linear-gradient(135deg, #ff2222 0%, #aa0000 100%)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: ${12 * pos.scale}px; box-shadow: 0 0 20px rgba(${idx === 0 ? '0, 100, 255' : '255, 50, 50'}, 0.8);">${goalie.num}</div>
+          `;
+          glDiv.style.transform = 'translate(-50%, -50%)';
+          playersContainer.appendChild(glDiv);
+        }
+      });
+
+      // Render puck
+      const puckPos = worldToScreen(gameState.puckX, gameState.puckZ);
+      puckElement.style.left = puckPos.x + 'px';
+      puckElement.style.top = puckPos.y + 'px';
+      puckElement.style.width = (8 * puckPos.scale) + 'px';
+      puckElement.style.height = (2 * puckPos.scale) + 'px';
+
+      // Update HUD
+      document.getElementById('hud-score-you').textContent = gameState.yourScore;
+      document.getElementById('hud-score-opp').textContent = gameState.opponentScore;
+      document.getElementById('hud-speed').textContent = Math.round(gameState.speed);
+      document.getElementById('hud-stamina').textContent = Math.round(gameState.stamina);
+      document.getElementById('hud-form').textContent = gameState.fatigue > 70 ? 'EXHAUSTED' : gameState.fatigue > 40 ? 'TIRED' : 'FRESH';
+      document.getElementById('shots-you').textContent = gameState.shotsOnGoal;
+      document.getElementById('shots-opp').textContent = Math.floor(gameState.shotsOnGoal * 0.8);
+      document.getElementById('hits-you').textContent = gameState.hits;
+      document.getElementById('hits-opp').textContent = Math.floor(gameState.hits * 0.6);
+      
+      const passAcc = gameState.passes > 0 ? Math.round((gameState.passesAccurate / gameState.passes) * 100) : 0;
+      document.getElementById('pass-accuracy').textContent = passAcc || '--';
+      
+      // Stamina bar
+      document.getElementById('stamina-bar').style.width = gameState.stamina + '%';
+      document.getElementById('speed-bar').style.width = Math.min(100, gameState.speed * 2) + '%';
+      
+      // Possession
+      const distToPuck = Math.sqrt(
+        Math.pow(gameState.puckX - gameState.playerX, 2) +
+        Math.pow(gameState.puckZ - gameState.playerZ, 2)
+      );
+      document.getElementById('possession-team').textContent = gameState.hasPuck ? '🔵 YOUR TEAM' : distToPuck < 20 ? 'CONTESTED' : '🔴 OPP TEAM';
+      document.getElementById('possession-bar').style.width = gameState.hasPuck ? '90%' : '50%';
+    }
+
+    function attemptAction(action) {
+      if (gameState.stamina < 10) return;
+
+      const distToPuck = Math.sqrt(
+        Math.pow(gameState.puckX - gameState.playerX, 2) +
+        Math.pow(gameState.puckZ - gameState.playerZ, 2)
+      );
+
+      if (action === 'shoot' && distToPuck < 8) {
+        gameState.stamina -= 20;
+        gameState.shots++;
+        
+        // Calculate shot direction
+        const angle = Math.atan2(gameState.playerZ, gameState.playerX - 85);
+        const speed = 15 + Math.random() * 10;
+        gameState.puckVelX = Math.cos(angle) * speed;
+        gameState.puckVelZ = Math.sin(angle) * speed;
+        gameState.hasPuck = false;
+        
+        // Chance of goal
+        if (Math.random() > 0.6) {
+          gameState.shotsOnGoal++;
+          if (Math.random() > 0.4) {
+            gameState.yourScore++;
+            showGoal();
+          }
+        }
+      } else if (action === 'pass' && gameState.hasPuck) {
+        gameState.stamina -= 12;
+        gameState.passes++;
+        gameState.puckVelX = Math.random() * 8 - 4;
+        gameState.puckVelZ = Math.random() * 8 - 4;
+        gameState.hasPuck = false;
+        if (Math.random() > 0.3) gameState.passesAccurate++;
+      } else if (action === 'check') {
+        gameState.stamina -= 15;
+        gameState.hits++;
+      }
+    }
+
+    function changePlayer() {
+      // Cycle through team
+      gameState.activePlayerIndex = (gameState.activePlayerIndex + 1) % teams.home.roster.length;
+      const player = teams.home.roster[gameState.activePlayerIndex];
+      gameState.playerX = player.x;
+      gameState.playerZ = player.z;
+    }
+
+    function showGoal() {
+      const anim = document.getElementById('goal-anim');
+      anim.classList.remove('hidden');
+      setTimeout(() => {
+        anim.classList.add('hidden');
+      }, 1500);
+    }
+
+    function updateGameTime() {
+      if (!gameState.gameRunning) return;
+      
+      gameState.timeRemaining--;
+      
+      if (gameState.timeRemaining <= 0) {
+        gameState.timeRemaining = 1200;
+        gameState.period++;
+        if (gameState.period > 3) {
+          gameState.gameRunning = false;
+        }
+      }
+      
+      const mins = Math.floor(gameState.timeRemaining / 60);
+      const secs = gameState.timeRemaining % 60;
+      document.getElementById('time-display').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      document.getElementById('period-display').textContent = `PERIOD ${gameState.period}`;
+    }
+
+    let animationId;
+    function gameLoop() {
+      updatePlayerPosition();
+      updatePuckPhysics();
+      renderGame();
+      updateGameTime();
+      
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // Spawn puck center ice
+    gameState.puckX = 0;
+    gameState.puckZ = 0;
+    gameLoop();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ca51de831e8422f',t:'MTc3MDQ5MDY4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
